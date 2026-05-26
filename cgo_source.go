@@ -20,7 +20,8 @@ package sort
 #cgo windows LDFLAGS: ${SRCDIR}/modules/platform/build/windows_amd64/libfinkit_platform_static.a -lm
 
 
-#include "sort.h"
+#include "multikey.h"
+#include "float_sort.h"
 
 // Platform sources (dependency)
 #include "simd_detect.c"
@@ -42,5 +43,11 @@ package sort
 #endif
 
 // sort sources
+#include "sort-c/multikey.c"
+#include "sort-c/float_sort.c"
 */
 import "C"
+
+func init() {
+	C.fc_init()
+}

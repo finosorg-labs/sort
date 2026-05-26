@@ -19,7 +19,7 @@ void bench_sort_run(void) {
     printf("\n");
     printf("============================================================\n");
     printf("  sort Module Performance Benchmarks\n");
-    printf("  SIMD level: %s\n", fc_simd_level_string(fc_detect_simd()));
+    printf("  SIMD level: %s\n", fc_simd_level_string(fc_get_simd_level()));
     printf("============================================================\n");
 
     /* Run all sub-module benchmarks */
