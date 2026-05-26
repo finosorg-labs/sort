@@ -41,9 +41,9 @@ typedef enum {
  * @brief Sort 64-bit floating-point array in-place
  *
  * Automatically selects optimal algorithm based on array size:
- * - Small (< 32): Sorting network
+ * - Small (< 32): Insertion sort
  * - Medium (32-10000): Introsort
- * - Large (> 10000): Radix sort
+ * - Large (> 10000): Radix sort with SIMD optimization
  *
  * NaN values are handled according to IEEE 754:
  * - By default, NaN values are placed at the end
