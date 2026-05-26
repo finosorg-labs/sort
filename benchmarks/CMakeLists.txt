@@ -23,6 +23,7 @@ target_link_libraries(bench_framework
 add_executable(sort_benchmarks
     bench_main.c
     bench_sort.c
+    bench_multikey.c
 )
 
 # Link with benchmark framework and sort library

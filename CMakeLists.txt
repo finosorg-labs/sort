@@ -61,7 +61,7 @@ endif()
 
 # sort module sources
 set(SORT_SOURCES
-    sort-c/xxx.c
+    sort-c/multikey.c
 )
 
 # Create object library

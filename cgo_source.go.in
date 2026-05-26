@@ -21,6 +21,7 @@ package sort
 
 
 #include "sort.h"
+#include "multikey.h"
 
 // Platform sources (dependency)
 #include "simd_detect.c"
@@ -42,5 +43,7 @@ package sort
 #endif
 
 // sort sources
+#include "sort-c/sort.c"
+#include "sort-c/multikey.c"
 */
 import "C"
