@@ -9,6 +9,8 @@ build/**
 build-*/
 install/
 
+sort-c/**
+
 # Go
 *.test
 *.out

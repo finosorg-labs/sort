@@ -1,3 +1,3 @@
-module github.com/finos-org-labs/sort
+module github.com/finosorg-labs/sort
 
 go 1.26.1
