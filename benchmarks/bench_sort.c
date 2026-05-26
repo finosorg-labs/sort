@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 /* External benchmark functions from sub-modules */
+extern void bench_float_sort_run(void);
 extern void bench_multikey_run(void);
 
 /* Entry point for sort benchmarks */
@@ -22,6 +23,7 @@ void bench_sort_run(void) {
     printf("============================================================\n");
 
     /* Run all sub-module benchmarks */
+    bench_float_sort_run();
     bench_multikey_run();
 
     printf("\n");

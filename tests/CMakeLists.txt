@@ -8,6 +8,7 @@ add_executable(sort_tests
     test_main.c
     test_sort.c
     test_multikey.c
+    test_float_sort.c
 )
 
 # Link with sort library
