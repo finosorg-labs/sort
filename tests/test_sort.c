@@ -12,6 +12,7 @@
 extern void register_float_sort_tests(void);
 extern void register_multikey_tests(void);
 extern void register_argsort_tests(void);
+extern void register_topk_tests(void);
 
 /* Entry point for sort tests */
 void register_sort_tests(void) {
@@ -19,4 +20,5 @@ void register_sort_tests(void) {
     register_float_sort_tests();
     register_multikey_tests();
     register_argsort_tests();
+    register_topk_tests();
 }

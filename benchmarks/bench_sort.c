@@ -14,6 +14,7 @@
 extern void bench_float_sort_run(void);
 extern void bench_multikey_run(void);
 extern void bench_argsort_run(void);
+extern void bench_topk_run(void);
 
 /* Entry point for sort benchmarks */
 void bench_sort_run(void) {
@@ -27,6 +28,7 @@ void bench_sort_run(void) {
     bench_float_sort_run();
     bench_multikey_run();
     bench_argsort_run();
+    bench_topk_run();
 
     printf("\n");
     printf("============================================================\n");
