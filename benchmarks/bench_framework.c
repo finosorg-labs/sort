@@ -113,11 +113,22 @@ uint64_t fc_bench_time_elapsed_ns(const fc_bench_time_t* start, const fc_bench_t
 */
 
 void fc_bench_result_print(const fc_bench_result_t* result) {
-    /* Go-style compact output format */
-    printf("%-50s\t%10lu\t%12.2f ns/op",
+    /* Go-style compact output format with adaptive time units */
+    printf("%-50s\t%10lu\t",
            result->name,
-           (unsigned long)result->iterations,
-           result->mean_ns);
+           (unsigned long)result->iterations);
+
+    /* Adaptive time unit display */
+    if (result->mean_ns >= 1000000.0) {
+        /* >= 1ms: show in milliseconds */
+        printf("%12.2f ms/op", result->mean_ns / 1000000.0);
+    } else if (result->mean_ns >= 1000.0) {
+        /* >= 1μs: show in microseconds */
+        printf("%12.2f μs/op", result->mean_ns / 1000.0);
+    } else {
+        /* < 1μs: show in nanoseconds */
+        printf("%12.2f ns/op", result->mean_ns);
+    }
 
     if (result->throughput_gb_s > 0) {
         printf("\t%10.2f MB/s", result->throughput_gb_s * 1024.0);
@@ -363,7 +374,7 @@ void fc_bench_run(
 
     /* Calculate derived metrics */
     if (result->data_size > 0 && result->elapsed_ms > 0) {
-        result->throughput_gb_s = fc_bench_throughput_gb_s(result->data_size, result->elapsed_ms);
+        result->throughput_gb_s = fc_bench_throughput_gb_s(result->data_size * result->iterations, result->elapsed_ms);
     }
 
     /* Note: bytes_per_op and allocs_per_op should be set by the benchmark

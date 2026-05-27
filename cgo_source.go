@@ -20,6 +20,7 @@ package sort
 #cgo windows LDFLAGS: ${SRCDIR}/modules/platform/build/windows_amd64/libfinkit_platform_static.a -lm
 
 
+#include "int_sort.h"
 #include "multikey.h"
 #include "float_sort.h"
 #include "argsort.h"
@@ -45,6 +46,7 @@ package sort
 #endif
 
 // sort sources
+#include "sort-c/int_sort.c"
 #include "sort-c/multikey.c"
 #include "sort-c/float_sort.c"
 #include "sort-c/argsort.c"

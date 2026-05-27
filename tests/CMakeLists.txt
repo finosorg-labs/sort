@@ -7,6 +7,7 @@ add_executable(sort_tests
     test_framework.c
     test_main.c
     test_sort.c
+    test_int_sort.c
     test_multikey.c
     test_float_sort.c
     test_argsort.c
