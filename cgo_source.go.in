@@ -23,7 +23,7 @@ package sort
 #include "multikey.h"
 #include "float_sort.h"
 #include "argsort.h"
-#include "topk.c"
+#include "topk.h"
 
 // Platform sources (dependency)
 #include "simd_detect.c"
