@@ -25,6 +25,7 @@ add_executable(sort_benchmarks
     bench_sort.c
     bench_float_sort.c
     bench_multikey.c
+    bench_argsort.c
 )
 
 # Link with benchmark framework and sort library

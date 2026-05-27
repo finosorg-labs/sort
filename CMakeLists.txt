@@ -63,6 +63,7 @@ endif()
 set(SORT_SOURCES
     sort-c/multikey.c
     sort-c/float_sort.c
+    sort-c/argsort.c
 )
 
 # Create object library
