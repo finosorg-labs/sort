@@ -104,8 +104,6 @@ TEST(test_multikey_ascending_order) {
 }
 
 TEST(test_multikey_indexed) {
-    FC_TEST_SKIP("Indexed sorting not yet implemented - will be in argsort.c");
-
     Order orders[] = {
         {100.5, 1000, 1}, {100.5, 900, 2}, {100.0, 1100, 3}, {101.0, 800, 4},
     };

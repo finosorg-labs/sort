@@ -130,8 +130,6 @@ func TestMultiKeyAscendingOrder(t *testing.T) {
 }
 
 func TestMultiKeyIndexed(t *testing.T) {
-	t.Skip("Indexed sorting not yet implemented - will be in argsort.c")
-
 	orders := []Order{
 		{100.5, 1000, 1},
 		{100.5, 900, 2},
