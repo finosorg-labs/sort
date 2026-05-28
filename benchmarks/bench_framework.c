@@ -146,6 +146,11 @@ void fc_bench_result_print(const fc_bench_result_t* result) {
     printf("\n");
 }
 
+void fc_bench_print_header(void) {
+    printf("%-50s\t%10s\t%12s\t%12s\n", "Benchmark", "Iterations", "Time/op", "Throughput");
+    printf("%-50s\t%10s\t%12s\t%12s\n", "---------", "----------", "-------", "----------");
+}
+
 void fc_bench_result_print_csv(const fc_bench_result_t* result, FILE* fp) {
     if (fp == NULL) fp = stdout;
 
@@ -395,6 +400,9 @@ void fc_bench_run(
 void fc_bench_init(void) {
     g_verbose = 1;
     g_output_file = NULL;
+
+    /* Print table header once at initialization */
+    fc_bench_print_header();
 }
 
 void fc_bench_cleanup(void) {
