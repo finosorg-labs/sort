@@ -17,7 +17,9 @@ add_executable(sort_tests
 # Link with sort library
 target_link_libraries(sort_tests
     PRIVATE
-        finkit_sort_static
+        finkit_sort_static_base
+     finkit::ds
+        finkit::platform
         m
 )
 

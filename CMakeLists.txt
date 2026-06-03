@@ -59,6 +59,34 @@ if(NOT TARGET finkit::platform)
     add_library(finkit::platform ALIAS finkit_platform_static)
 endif()
 
+# Use prebuilt ds library
+if(NOT TARGET finkit::ds)
+    # Detect platform for ds
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+            set(DS_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules/ds/build/darwin_arm64")
+        else()
+        set(DS_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules/ds/build/darwin_x86_64")
+        endif()
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        set(DS_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules/ds/build/linux_amd64")
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        set(DS_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/modules/ds/build/windows_amd64")
+    else()
+        message(FATAL_ERROR "Unsupported platform: ${CMAKE_SYSTEM_NAME}")
+    endif()
+
+    # Import prebuilt ds library
+    add_library(finkit_ds_static STATIC IMPORTED)
+    set_target_properties(finkit_ds_static PROPERTIES
+        IMPORTED_LOCATION "${DS_BUILD_DIR}/libfinkit_ds_static.a"
+    )
+    target_include_directories(finkit_ds_static INTERFACE
+        "${CMAKE_CURRENT_SOURCE_DIR}/modules/ds/include"
+    )
+    add_library(finkit::ds ALIAS finkit_ds_static)
+endif()
+
 # sort module sources
 set(SORT_SOURCES
     sort-c/multikey.c
@@ -101,29 +129,116 @@ elseif(FC_SIMD_LEVEL STREQUAL "SSE42")
     set_source_files_properties(sort-c/topk.c PROPERTIES COMPILE_FLAGS "${FC_SSE42_FLAGS}")
 endif()
 
-# Create static library
-add_library(finkit_sort_static STATIC $<TARGET_OBJECTS:finkit_sort>)
-target_include_directories(finkit_sort_static
+# Create base static library (without platform)
+add_library(finkit_sort_static_base STATIC $<TARGET_OBJECTS:finkit_sort>)
+target_include_directories(finkit_sort_static_base
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
-# Link platform and math library
-target_link_libraries(finkit_sort_static PUBLIC finkit::platform m)
+# Determine sort build directory
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+        set(SORT_BUILD_DIR "darwin_arm64")
+    else()
+        set(SORT_BUILD_DIR "darwin_x86_64")
+    endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(SORT_BUILD_DIR "linux_amd64")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(SORT_BUILD_DIR "windows_amd64")
+endif()
+
+# Merge static libraries into a single library
+set(MERGED_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/${SORT_BUILD_DIR}/libfinkit_sort_static.a)
+set(PLATFORM_LIB_PATH "${PLATFORM_BUILD_DIR}/libfinkit_platform_static.a")
+set(DS_LIB_PATH "${DS_BUILD_DIR}/libfinkit_ds_static.a")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # Windows: use lib.exe to merge libraries
+    add_custom_command(
+        OUTPUT ${MERGED_LIB_PATH}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/${SORT_BUILD_DIR}
+        COMMAND lib.exe /OUT:${MERGED_LIB_PATH}
+            $<TARGET_FILE:finkit_sort_static_base>
+            ${DS_LIB_PATH}
+         ${PLATFORM_LIB_PATH}
+        DEPENDS finkit_sort_static_base ${DS_LIB_PATH} ${PLATFORM_LIB_PATH}
+        COMMENT "Merging static libraries into ${MERGED_LIB_PATH}"
+        VERBATIM
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # macOS: use libtool to merge libraries
+    add_custom_command(
+        OUTPUT ${MERGED_LIB_PATH}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/${SORT_BUILD_DIR}
+      COMMAND libtool -static -o ${MERGED_LIB_PATH}
+            $<TARGET_FILE:finkit_sort_static_base>
+            ${DS_LIB_PATH}
+            ${PLATFORM_LIB_PATH}
+            2>&1 | grep -v "warning duplicate member name" || true
+        DEPENDS finkit_sort_static_base ${DS_LIB_PATH} ${PLATFORM_LIB_PATH}
+        COMMENT "Merging static libraries into ${MERGED_LIB_PATH}"
+        VERBATIM
+    )
+else()
+    # Linux: use ar with MRI script to merge libraries
+    set(MRI_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/merge_libs.mri)
+    file(GENERATE OUTPUT ${MRI_SCRIPT} CONTENT
+"CREATE ${MERGED_LIB_PATH}
+ADDLIB $<TARGET_FILE:finkit_sort_static_base>
+ADDLIB ${DS_LIB_PATH}
+ADDLIB ${PLATFORM_LIB_PATH}
+SAVE
+END
+")
+
+    add_custom_command(
+      OUTPUT ${MERGED_LIB_PATH}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/build/${SORT_BUILD_DIR}
+        COMMAND ${CMAKE_AR} -M < ${MRI_SCRIPT}
+      DEPENDS finkit_sort_static_base ${DS_LIB_PATH} ${PLATFORM_LIB_PATH} ${MRI_SCRIPT}
+        COMMENT "Merging static libraries into ${MERGED_LIB_PATH}"
+      VERBATIM
+    )
+endif()
+
+# Create custom target to trigger the merge
+add_custom_target(finkit_sort_static ALL
+    DEPENDS ${MERGED_LIB_PATH}
+    COMMAND ${CMAKE_COMMAND} -E echo "Merged library created at: ${MERGED_LIB_PATH}"
+)
+
+# Create interface library for linking
+add_library(finkit_sort_static_interface INTERFACE)
+target_include_directories(finkit_sort_static_interface
+    INTERFACE
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(finkit_sort_static_interface
+    INTERFACE
+        m
+        ${MERGED_LIB_PATH}
+)
 
 # Create alias
-add_library(finkit::sort ALIAS finkit_sort_static)
+add_library(finkit::sort ALIAS finkit_sort_static_interface)
 
-# Install
-install(TARGETS finkit_sort_static
-    EXPORT finkit-sort-targets
-    ARCHIVE DESTINATION lib
+# Install merged static library
+install(FILES ${MERGED_LIB_PATH}
+    DESTINATION lib
 )
 
 install(DIRECTORY include/
     DESTINATION include/sort
     FILES_MATCHING PATTERN "*.h"
+)
+
+# Install interface library target
+install(TARGETS finkit_sort_static_interface
+    EXPORT finkit-sort-targets
 )
 
 install(EXPORT finkit-sort-targets
