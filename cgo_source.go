@@ -15,9 +15,9 @@ package sort
 #cgo CFLAGS: -I${SRCDIR}/modules/platform/src -O2 -Wall -std=c11 -mavx2 -mfma
 #cgo linux CFLAGS: -D_POSIX_C_SOURCE=200112L
 #cgo linux LDFLAGS: ${SRCDIR}/modules/platform/build/linux_amd64/libfinkit_platform_static.a -lm -lgcov
-#cgo darwin,arm64 LDFLAGS: ${SRCDIR}/modules/platform/build/darwin_arm64/libfinkit_platform_static.a -lm
-#cgo darwin,amd64 LDFLAGS: ${SRCDIR}/modules/platform/build/darwin_x86_64/libfinkit_platform_static.a -lm
-#cgo windows LDFLAGS: ${SRCDIR}/modules/platform/build/windows_amd64/libfinkit_platform_static.a -lm
+#cgo darwin,arm64 LDFLAGS: ${SRCDIR}/modules/platform/build/darwin_arm64/libfinkit_platform_static.a -lm -lgcov
+#cgo darwin,amd64 LDFLAGS: ${SRCDIR}/modules/platform/build/darwin_x86_64/libfinkit_platform_static.a -lm -lgcov
+#cgo windows LDFLAGS: ${SRCDIR}/modules/platform/build/windows_amd64/libfinkit_platform_static.a -lm -lgcov
 
 
 #include "int_sort.h"
@@ -26,31 +26,15 @@ package sort
 #include "argsort.h"
 #include "topk.h"
 
-// Platform sources (dependency)
-#include "simd_detect.c"
-#include "fc_bignum_init.c"
-#include "fc_bigint.c"
-#include "fc_bigfloat.c"
-#include "fc_precision.c"
-#include "mem_aligned.c"
-#include "error.c"
-#include "fc_init.c"
-
-// Platform-specific sources
-#if defined(__linux__)
-  #include "modules/platform/src/platform_linux.c"
-#elif defined(__APPLE__)
-  #include "modules/platform/src/platform_macos.c"
-#elif defined(_WIN32)
-  #include "modules/platform/src/platform_win.c"
-#endif
-
 // sort sources
 #include "sort-c/int_sort.c"
 #include "sort-c/multikey.c"
 #include "sort-c/float_sort.c"
 #include "sort-c/argsort.c"
 #include "sort-c/topk.c"
+
+int fc_init(void);
+void fc_cleanup(void);
 */
 import "C"
 
