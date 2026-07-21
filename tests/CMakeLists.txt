@@ -14,12 +14,10 @@ add_executable(sort_tests
     test_topk.c
 )
 
-# Link with sort library
+# Link with merged sort library (includes all dependencies)
 target_link_libraries(sort_tests
     PRIVATE
-        finkit_sort_static_base
-     finkit::ds
-        finkit::platform
+        finkit_sort_static_interface
         m
 )
 

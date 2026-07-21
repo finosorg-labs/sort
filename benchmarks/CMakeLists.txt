@@ -14,13 +14,6 @@ target_include_directories(bench_framework
         ${CMAKE_SOURCE_DIR}/modules/platform/include
 )
 
-target_link_libraries(bench_framework
-    PUBLIC
-        finkit_sort_static_base
-        finkit::platform
-      finkit::ds
-)
-
 # Benchmark executable
 add_executable(sort_benchmarks
     bench_main.c
@@ -32,13 +25,11 @@ add_executable(sort_benchmarks
     bench_topk.c
 )
 
-# Link with benchmark framework and sort library
+# Link with benchmark framework and merged sort library
 target_link_libraries(sort_benchmarks
     PRIVATE
         bench_framework
-        finkit_sort_static_base
-        finkit::platform
-        finkit::ds
+        finkit_sort_static_interface
         m
 )
 
