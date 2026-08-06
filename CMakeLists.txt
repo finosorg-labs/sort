@@ -8,6 +8,22 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/DetectSIMD.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompilerFlags.cmake)
 
+# Optional: Enable OpenMP for parallel processing
+option(FC_ENABLE_OPENMP "Enable OpenMP for parallel batch processing" ON)
+if(FC_ENABLE_OPENMP)
+    find_package(OpenMP)
+    if(OpenMP_C_FOUND)
+        set(FC_HAS_OPENMP TRUE)
+        message(STATUS "OpenMP enabled for parallel batch processing")
+    else()
+        set(FC_HAS_OPENMP FALSE)
+        message(STATUS "OpenMP not found, batch processing will be sequential")
+    endif()
+else()
+    set(FC_HAS_OPENMP FALSE)
+    message(STATUS "OpenMP disabled by user")
+endif()
+
 # Sanitizer configuration
 if(FC_ENABLE_SANITIZERS)
     if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sanitizers.cmake)

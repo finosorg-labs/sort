@@ -382,3 +382,177 @@ func BenchmarkTopKLargestFloat64Indexed(b *testing.B) {
 		TopKLargestFloat64Indexed(data, k)
 	}
 }
+
+func TestTopKLargestFloat64BatchBasic(t *testing.T) {
+	arrays := [][]float64{
+		{3.0, 1.0, 4.0, 5.0},
+		{9.0, 2.0, 6.0, 5.0},
+		{8.0, 7.0, 1.0, 3.0},
+	}
+
+	err := TopKLargestFloat64Batch(arrays, 2)
+	if err != nil {
+		t.Fatalf("TopKLargestFloat64Batch failed: %v", err)
+	}
+
+	// Check array 1: top 2 should be [5.0, 4.0]
+	expected1 := []float64{5.0, 4.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(arrays[0][i]-expected1[i]) > 1e-10 {
+			t.Errorf("arrays[0][%d] = %f, expected %f", i, arrays[0][i], expected1[i])
+		}
+	}
+
+	// Check array 2: top 2 should be [9.0, 6.0]
+	expected2 := []float64{9.0, 6.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(arrays[1][i]-expected2[i]) > 1e-10 {
+			t.Errorf("arrays[1][%d] = %f, expected %f", i, arrays[1][i], expected2[i])
+		}
+	}
+
+	// Check array 3: top 2 should be [8.0, 7.0]
+	expected3 := []float64{8.0, 7.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(arrays[2][i]-expected3[i]) > 1e-10 {
+			t.Errorf("arrays[2][%d] = %f, expected %f", i, arrays[2][i], expected3[i])
+		}
+	}
+}
+
+func TestTopKSmallestFloat64BatchBasic(t *testing.T) {
+	arrays := [][]float64{
+		{3.0, 1.0, 4.0, 5.0},
+		{9.0, 2.0, 6.0, 5.0},
+	}
+
+	err := TopKSmallestFloat64Batch(arrays, 2)
+	if err != nil {
+		t.Fatalf("TopKSmallestFloat64Batch failed: %v", err)
+	}
+
+	// Check array 1: top 2 smallest should be [1.0, 3.0]
+	expected1 := []float64{1.0, 3.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(arrays[0][i]-expected1[i]) > 1e-10 {
+			t.Errorf("arrays[0][%d] = %f, expected %f", i, arrays[0][i], expected1[i])
+		}
+	}
+
+	// Check array 2: top 2 smallest should be [2.0, 5.0]
+	expected2 := []float64{2.0, 5.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(arrays[1][i]-expected2[i]) > 1e-10 {
+			t.Errorf("arrays[1][%d] = %f, expected %f", i, arrays[1][i], expected2[i])
+		}
+	}
+}
+
+func TestTopKLargestFloat64BatchEmpty(t *testing.T) {
+	arrays := [][]float64{}
+	err := TopKLargestFloat64Batch(arrays, 2)
+	if err != nil {
+		t.Fatalf("TopKLargestFloat64Batch with empty arrays failed: %v", err)
+	}
+}
+
+func TestTopKLargestFloat32BatchBasic(t *testing.T) {
+	arrays := [][]float32{
+		{3.0, 1.0, 4.0, 5.0},
+		{9.0, 2.0, 6.0, 5.0},
+	}
+
+	err := TopKLargestFloat32Batch(arrays, 2)
+	if err != nil {
+		t.Fatalf("TopKLargestFloat32Batch failed: %v", err)
+	}
+
+	// Check array 1: top 2 should be [5.0, 4.0]
+	expected1 := []float32{5.0, 4.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(float64(arrays[0][i]-expected1[i])) > 1e-6 {
+			t.Errorf("arrays[0][%d] = %f, expected %f", i, arrays[0][i], expected1[i])
+		}
+	}
+
+	// Check array 2: top 2 should be [9.0, 6.0]
+	expected2 := []float32{9.0, 6.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(float64(arrays[1][i]-expected2[i])) > 1e-6 {
+			t.Errorf("arrays[1][%d] = %f, expected %f", i, arrays[1][i], expected2[i])
+		}
+	}
+}
+
+func TestTopKSmallestFloat32BatchBasic(t *testing.T) {
+	arrays := [][]float32{
+		{3.0, 1.0, 4.0, 5.0},
+		{9.0, 2.0, 6.0, 5.0},
+	}
+
+	err := TopKSmallestFloat32Batch(arrays, 2)
+	if err != nil {
+		t.Fatalf("TopKSmallestFloat32Batch failed: %v", err)
+	}
+
+	// Check array 1: top 2 smallest should be [1.0, 3.0]
+	expected1 := []float32{1.0, 3.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(float64(arrays[0][i]-expected1[i])) > 1e-6 {
+			t.Errorf("arrays[0][%d] = %f, expected %f", i, arrays[0][i], expected1[i])
+		}
+	}
+
+	// Check array 2: top 2 smallest should be [2.0, 5.0]
+	expected2 := []float32{2.0, 5.0}
+	for i := 0; i < 2; i++ {
+		if math.Abs(float64(arrays[1][i]-expected2[i])) > 1e-6 {
+			t.Errorf("arrays[1][%d] = %f, expected %f", i, arrays[1][i], expected2[i])
+		}
+	}
+}
+
+func BenchmarkTopKLargestFloat64Batch10Arrays(b *testing.B) {
+	arrays := make([][]float64, 10)
+	for i := 0; i < 10; i++ {
+		arrays[i] = make([]float64, 100)
+		for j := 0; j < 100; j++ {
+			arrays[i][j] = float64(j)
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TopKLargestFloat64Batch(arrays, 10)
+	}
+}
+
+func BenchmarkTopKLargestFloat64Batch100Arrays(b *testing.B) {
+	arrays := make([][]float64, 100)
+	for i := 0; i < 100; i++ {
+		arrays[i] = make([]float64, 100)
+		for j := 0; j < 100; j++ {
+			arrays[i][j] = float64(j)
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TopKLargestFloat64Batch(arrays, 10)
+	}
+}
+
+func BenchmarkTopKLargestFloat64Batch1000Arrays(b *testing.B) {
+	arrays := make([][]float64, 1000)
+	for i := 0; i < 1000; i++ {
+		arrays[i] = make([]float64, 100)
+		for j := 0; j < 100; j++ {
+			arrays[i][j] = float64(j)
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TopKLargestFloat64Batch(arrays, 10)
+	}
+}

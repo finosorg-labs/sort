@@ -6,6 +6,7 @@ package sort
 */
 import "C"
 import (
+	"runtime"
 	"unsafe"
 )
 
@@ -278,4 +279,222 @@ func TopKSmallestFloat32Indexed(data []float32, k int) ([]float32, []int, error)
 	}
 
 	return values, intIndices, nil
+}
+
+// TopKLargestFloat64Batch performs Top-K selection on multiple float64 slices in a single C call
+//
+// This function reduces cgo overhead by processing multiple arrays in one call,
+// making it ideal for batch operations like market-wide aggregation.
+// Each slice is modified in-place with its K largest elements at the front.
+//
+// All input slices must have the same K value. If different K values are needed,
+// call this function multiple times with grouped slices.
+//
+// Example:
+//
+//	arrays := [][]float64{
+//	    {3.0, 1.0, 4.0, 5.0},
+//	    {9.0, 2.0, 6.0, 5.0},
+//	    {8.0, 7.0, 1.0, 3.0},
+//	}
+//	err := sort.TopKLargestFloat64Batch(arrays, 2)
+//	// Each array now has its 2 largest elements at the front
+func TopKLargestFloat64Batch(arrays [][]float64, k int) error {
+	if len(arrays) == 0 {
+		return nil
+	}
+
+	// Prepare C arrays
+	numBatches := len(arrays)
+	dataPtrs := make([]*C.double, numBatches)
+	sizes := make([]C.size_t, numBatches)
+	ks := make([]C.size_t, numBatches)
+
+	// Pin all Go pointers to prevent them from moving
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+
+	for i, arr := range arrays {
+		if len(arr) == 0 {
+			continue
+		}
+		if k > len(arr) {
+			return ErrInvalidInput
+		}
+		dataPtrs[i] = (*C.double)(unsafe.Pointer(&arr[0]))
+		pinner.Pin(&arr[0])
+		sizes[i] = C.size_t(len(arr))
+		ks[i] = C.size_t(k)
+	}
+
+	// Pin the pointer arrays themselves
+	pinner.Pin(&dataPtrs[0])
+	pinner.Pin(&sizes[0])
+	pinner.Pin(&ks[0])
+
+	err := C.fc_topk_largest_f64_batch(
+		(**C.double)(unsafe.Pointer(&dataPtrs[0])),
+		(*C.size_t)(unsafe.Pointer(&sizes[0])),
+		(*C.size_t)(unsafe.Pointer(&ks[0])),
+		C.size_t(numBatches),
+	)
+
+	return cErrorToGo(err)
+}
+
+// TopKSmallestFloat64Batch performs Top-K smallest selection on multiple float64 slices
+//
+// Example:
+//
+//	arrays := [][]float64{
+//	    {3.0, 1.0, 4.0, 5.0},
+//	    {9.0, 2.0, 6.0, 5.0},
+//	}
+//	err := sort.TopKSmallestFloat64Batch(arrays, 2)
+//	// Each array now has its 2 smallest elements at the front
+func TopKSmallestFloat64Batch(arrays [][]float64, k int) error {
+	if len(arrays) == 0 {
+		return nil
+	}
+
+	// Prepare C arrays
+	numBatches := len(arrays)
+	dataPtrs := make([]*C.double, numBatches)
+	sizes := make([]C.size_t, numBatches)
+	ks := make([]C.size_t, numBatches)
+
+	// Pin all Go pointers to prevent them from moving
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+
+	for i, arr := range arrays {
+		if len(arr) == 0 {
+			continue
+		}
+		if k > len(arr) {
+			return ErrInvalidInput
+		}
+		dataPtrs[i] = (*C.double)(unsafe.Pointer(&arr[0]))
+		pinner.Pin(&arr[0])
+		sizes[i] = C.size_t(len(arr))
+		ks[i] = C.size_t(k)
+	}
+
+	// Pin the pointer arrays themselves
+	pinner.Pin(&dataPtrs[0])
+	pinner.Pin(&sizes[0])
+	pinner.Pin(&ks[0])
+
+	err := C.fc_topk_smallest_f64_batch(
+		(**C.double)(unsafe.Pointer(&dataPtrs[0])),
+		(*C.size_t)(unsafe.Pointer(&sizes[0])),
+		(*C.size_t)(unsafe.Pointer(&ks[0])),
+		C.size_t(numBatches),
+	)
+
+	return cErrorToGo(err)
+}
+
+// TopKLargestFloat32Batch performs Top-K selection on multiple float32 slices in a single C call
+//
+// Example:
+//
+//	arrays := [][]float32{
+//	    {3.0, 1.0, 4.0, 5.0},
+//	    {9.0, 2.0, 6.0, 5.0},
+//	}
+//	err := sort.TopKLargestFloat32Batch(arrays, 2)
+func TopKLargestFloat32Batch(arrays [][]float32, k int) error {
+	if len(arrays) == 0 {
+		return nil
+	}
+
+	// Prepare C arrays
+	numBatches := len(arrays)
+	dataPtrs := make([]*C.float, numBatches)
+	sizes := make([]C.size_t, numBatches)
+	ks := make([]C.size_t, numBatches)
+
+	// Pin all Go pointers to prevent them from moving
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+
+	for i, arr := range arrays {
+		if len(arr) == 0 {
+			continue
+		}
+		if k > len(arr) {
+			return ErrInvalidInput
+		}
+		dataPtrs[i] = (*C.float)(unsafe.Pointer(&arr[0]))
+		pinner.Pin(&arr[0])
+		sizes[i] = C.size_t(len(arr))
+		ks[i] = C.size_t(k)
+	}
+
+	// Pin the pointer arrays themselves
+	pinner.Pin(&dataPtrs[0])
+	pinner.Pin(&sizes[0])
+	pinner.Pin(&ks[0])
+
+	err := C.fc_topk_largest_f32_batch(
+		(**C.float)(unsafe.Pointer(&dataPtrs[0])),
+		(*C.size_t)(unsafe.Pointer(&sizes[0])),
+		(*C.size_t)(unsafe.Pointer(&ks[0])),
+		C.size_t(numBatches),
+	)
+
+	return cErrorToGo(err)
+}
+
+// TopKSmallestFloat32Batch performs Top-K smallest selection on multiple float32 slices
+//
+// Example:
+//
+//	arrays := [][]float32{
+//	    {3.0, 1.0, 4.0, 5.0},
+//	    {9.0, 2.0, 6.0, 5.0},
+//	}
+//	err := sort.TopKSmallestFloat32Batch(arrays, 2)
+func TopKSmallestFloat32Batch(arrays [][]float32, k int) error {
+	if len(arrays) == 0 {
+		return nil
+	}
+
+	// Prepare C arrays
+	numBatches := len(arrays)
+	dataPtrs := make([]*C.float, numBatches)
+	sizes := make([]C.size_t, numBatches)
+	ks := make([]C.size_t, numBatches)
+
+	// Pin all Go pointers to prevent them from moving
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+
+	for i, arr := range arrays {
+		if len(arr) == 0 {
+			continue
+		}
+		if k > len(arr) {
+			return ErrInvalidInput
+		}
+		dataPtrs[i] = (*C.float)(unsafe.Pointer(&arr[0]))
+		pinner.Pin(&arr[0])
+		sizes[i] = C.size_t(len(arr))
+		ks[i] = C.size_t(k)
+	}
+
+	// Pin the pointer arrays themselves
+	pinner.Pin(&dataPtrs[0])
+	pinner.Pin(&sizes[0])
+	pinner.Pin(&ks[0])
+
+	err := C.fc_topk_smallest_f32_batch(
+		(**C.float)(unsafe.Pointer(&dataPtrs[0])),
+		(*C.size_t)(unsafe.Pointer(&sizes[0])),
+		(*C.size_t)(unsafe.Pointer(&ks[0])),
+		C.size_t(numBatches),
+	)
+
+	return cErrorToGo(err)
 }

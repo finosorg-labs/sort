@@ -12,6 +12,11 @@
  * - Small K (< 100): Min/Max heap
  * - Medium K (100 to n/10): QuickSelect with partial sort
  * - Large K (>= n/10): Full sort (more cache-friendly)
+ *
+ * Batch processing features:
+ * - OpenMP parallel execution for large batches (>= 4 arrays)
+ * - Automatic fallback to sequential for small batches
+ * - Dynamic scheduling for load balancing
  */
 
 #ifndef FC_TOPK_H
@@ -170,6 +175,93 @@ FC_API fc_status_t fc_topk_smallest_f32_indexed(
     size_t k,
     float* out_values,
     size_t* out_indices
+);
+
+/**
+ * @brief Batch Top-K selection for multiple independent float64 arrays
+ *
+ * Processes multiple Top-K selections in a single call, reducing cgo overhead
+ * for batch operations. Each array is processed independently with its own size and K.
+ *
+ * Performance optimizations:
+ * - Reduces cgo call overhead (e.g., 2000 calls -> 2 calls for 1000 symbols)
+ * - OpenMP parallel execution for large batches (>= 4 arrays) when available
+ * - Dynamic work scheduling for optimal load balancing
+ * - Cache-friendly memory access patterns
+ *
+ * This is especially beneficial when processing many symbols in parallel (e.g.,
+ * market-wide aggregation) as it amortizes the cgo call overhead across all arrays.
+ *
+ * Time complexity: O(sum(n_i)) average for all arrays
+ * Space complexity: O(1) - operates in-place on each array
+ * Parallelization: Automatic with OpenMP (>= 4 arrays), sequential otherwise
+ *
+ * @param batch_data Array of pointers to data arrays (each modified in-place)
+ * @param batch_sizes Array of sizes for each data array
+ * @param batch_k Array of K values for each array
+ * @param num_batches Number of arrays to process
+ * @return FC_OK on success, error code if any batch fails
+ *
+ * Example:
+ *   double* arrays[3] = {array1, array2, array3};
+ *   size_t sizes[3] = {100, 200, 150};
+ *   size_t ks[3] = {10, 20, 15};
+ *   fc_topk_largest_f64_batch(arrays, sizes, ks, 3);
+ *   // Each array now has its top K elements at the front
+ */
+FC_API fc_status_t fc_topk_largest_f64_batch(
+    double** batch_data,
+    const size_t* batch_sizes,
+    const size_t* batch_k,
+    size_t num_batches
+);
+
+/**
+ * @brief Batch Top-K smallest selection for multiple independent float64 arrays
+ *
+ * @param batch_data Array of pointers to data arrays (each modified in-place)
+ * @param batch_sizes Array of sizes for each data array
+ * @param batch_k Array of K values for each array
+ * @param num_batches Number of arrays to process
+ * @return FC_OK on success, error code if any batch fails
+ */
+FC_API fc_status_t fc_topk_smallest_f64_batch(
+    double** batch_data,
+    const size_t* batch_sizes,
+    const size_t* batch_k,
+    size_t num_batches
+);
+
+/**
+ * @brief Batch Top-K largest selection for multiple independent float32 arrays
+ *
+ * @param batch_data Array of pointers to data arrays (each modified in-place)
+ * @param batch_sizes Array of sizes for each data array
+ * @param batch_k Array of K values for each array
+ * @param num_batches Number of arrays to process
+ * @return FC_OK on success, error code if any batch fails
+ */
+FC_API fc_status_t fc_topk_largest_f32_batch(
+    float** batch_data,
+    const size_t* batch_sizes,
+    const size_t* batch_k,
+    size_t num_batches
+);
+
+/**
+ * @brief Batch Top-K smallest selection for multiple independent float32 arrays
+ *
+ * @param batch_data Array of pointers to data arrays (each modified in-place)
+ * @param batch_sizes Array of sizes for each data array
+ * @param batch_k Array of K values for each array
+ * @param num_batches Number of arrays to process
+ * @return FC_OK on success, error code if any batch fails
+ */
+FC_API fc_status_t fc_topk_smallest_f32_batch(
+    float** batch_data,
+    const size_t* batch_sizes,
+    const size_t* batch_k,
+    size_t num_batches
 );
 
 FC_END_DECLS

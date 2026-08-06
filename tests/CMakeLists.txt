@@ -21,6 +21,11 @@ target_link_libraries(sort_tests
         m
 )
 
+# Link OpenMP if available
+if(FC_HAS_OPENMP)
+    target_link_libraries(sort_tests PRIVATE OpenMP::OpenMP_C)
+endif()
+
 target_compile_definitions(sort_tests PRIVATE
     FC_STATIC_BUILD
 )
