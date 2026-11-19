@@ -264,6 +264,107 @@ FC_API fc_status_t fc_topk_smallest_f32_batch(
     size_t num_batches
 );
 
+/**
+ * @brief Batch Top-K largest selection with indices for multiple float64 arrays
+ *
+ * Processes multiple Top-K selections in a single call, preserving original data.
+ * Unlike the in-place batch functions, this version does not modify input arrays.
+ *
+ * Each output array must be pre-allocated by the caller:
+ * - out_values[i] must have size >= batch_k[i]
+ * - out_indices[i] must have size >= batch_k[i]
+ *
+ * Performance optimizations:
+ * - Reduces cgo call overhead for batch operations
+ * - OpenMP parallel execution for large batches (>= 4 arrays) when available
+ * - Dynamic work scheduling for optimal load balancing
+ *
+ * @param batch_data Array of pointers to input data arrays (not modified)
+ * @param batch_sizes Array of sizes for each data array
+ * @param batch_k Array of K values for each array
+ * @param num_batches Number of arrays to process
+ * @param out_values Array of pointers to output value arrays (pre-allocated)
+ * @param out_indices Array of pointers to output index arrays (pre-allocated)
+ * @return FC_OK on success, error code if any batch fails
+ *
+ * Example:
+ *   const double* inputs[2] = {array1, array2};
+ *   size_t sizes[2] = {100, 200};
+ *   size_t ks[2] = {10, 20};
+ *   double* values[2] = {malloc(10*sizeof(double)), malloc(20*sizeof(double))};
+ *   size_t* indices[2] = {malloc(10*sizeof(size_t)), malloc(20*sizeof(size_t))};
+ *   fc_topk_largest_f64_indexed_batch(inputs, sizes, ks, 2, values, indices);
+ *   // values[0] contains top 10 from array1, indices[0] contains their positions
+ */
+FC_API fc_status_t fc_topk_largest_f64_indexed_batch(
+    const double** batch_data,
+    const size_t* batch_sizes,
+    const size_t* batch_k,
+    size_t num_batches,
+    double** out_values,
+    size_t** out_indices
+);
+
+/**
+ * @brief Batch Top-K smallest selection with indices for multiple float64 arrays
+ *
+ * @param batch_data Array of pointers to input data arrays (not modified)
+ * @param batch_sizes Array of sizes for each data array
+ * @param batch_k Array of K values for each array
+ * @param num_batches Number of arrays to process
+ * @param out_values Array of pointers to output value arrays (pre-allocated)
+ * @param out_indices Array of pointers to output index arrays (pre-allocated)
+ * @return FC_OK on success, error code if any batch fails
+ */
+FC_API fc_status_t fc_topk_smallest_f64_indexed_batch(
+    const double** batch_data,
+    const size_t* batch_sizes,
+    const size_t* batch_k,
+    size_t num_batches,
+    double** out_values,
+    size_t** out_indices
+);
+
+/**
+ * @brief Batch Top-K largest selection with indices for multiple float32 arrays
+ *
+ * @param batch_data Array of pointers to input data arrays (not modified)
+ * @param batch_sizes Array of sizes for each data array
+ * @param batch_k Array of K values for each array
+ * @param num_batches Number of arrays to process
+ * @param out_values Array of pointers to output value arrays (pre-allocated)
+ * @param out_indices Array of pointers to output index arrays (pre-allocated)
+ * @return FC_OK on success, error code if any batch fails
+ */
+FC_API fc_status_t fc_topk_largest_f32_indexed_batch(
+    const float** batch_data,
+    const size_t* batch_sizes,
+    const size_t* batch_k,
+    size_t num_batches,
+    float** out_values,
+    size_t** out_indices
+);
+
+/**
+ * @brief Batch Top-K smallest selection with indices for multiple float32 arrays
+ *
+ * @param batch_data Array of pointers to input data arrays (not modified)
+ * @param batch_sizes Array of sizes for each data array
+ * @param batch_k Array of K values for each array
+ * @param num_batches Number of arrays to process
+ * @param out_values Array of pointers to output value arrays (pre-allocated)
+ * @param out_indices Array of pointers to output index arrays (pre-allocated)
+ * @return FC_OK on success, error code if any batch fails
+ */
+FC_API fc_status_t fc_topk_smallest_f32_indexed_batch(
+    const float** batch_data,
+    const size_t* batch_sizes,
+    const size_t* batch_k,
+    size_t num_batches,
+    float** out_values,
+    size_t** out_indices
+);
+
 FC_END_DECLS
 
 #endif /* FC_TOPK_H */

@@ -540,6 +540,258 @@ TEST(topk_largest_f64_batch_large_scale) {
     free(ks);
 }
 
+/* Indexed batch processing tests */
+
+TEST(topk_largest_f64_indexed_batch_basic) {
+    const size_t num_batches = 3;
+    const size_t array_size = 10;
+    const size_t k = 3;
+
+    /* Prepare input arrays (const) */
+    const double* input_arrays[3];
+    double arrays_data[3][10] = {
+        {9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0},
+        {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0},
+        {5.0, 3.0, 8.0, 1.0, 9.0, 2.0, 7.0, 4.0, 6.0, 0.0}
+    };
+
+    for (size_t i = 0; i < num_batches; i++) {
+        input_arrays[i] = arrays_data[i];
+    }
+
+    size_t sizes[3] = {array_size, array_size, array_size};
+    size_t ks[3] = {k, k, k};
+
+    /* Allocate output arrays */
+    double* out_values[3];
+    size_t* out_indices[3];
+    for (size_t i = 0; i < num_batches; i++) {
+        out_values[i] = (double*)malloc(k * sizeof(double));
+        out_indices[i] = (size_t*)malloc(k * sizeof(size_t));
+        ASSERT_NOT_NULL(out_values[i]);
+        ASSERT_NOT_NULL(out_indices[i]);
+    }
+
+    /* Call indexed batch function */
+    fc_status_t err = fc_topk_largest_f64_indexed_batch(
+        input_arrays, sizes, ks, num_batches, out_values, out_indices
+    );
+    ASSERT_EQ(err, FC_OK);
+
+    /* Verify results - Array 0: top 3 should be {9, 8, 7} from indices {0, 1, 2} */
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[0][0], 9.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[0][1], 8.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[0][2], 7.0, 1e-10);
+    ASSERT_EQ(out_indices[0][0], 0);
+    ASSERT_EQ(out_indices[0][1], 1);
+    ASSERT_EQ(out_indices[0][2], 2);
+
+    /* Verify results - Array 1: top 3 should be {9, 8, 7} from indices {9, 8, 7} */
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[1][0], 9.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[1][1], 8.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[1][2], 7.0, 1e-10);
+    ASSERT_EQ(out_indices[1][0], 9);
+    ASSERT_EQ(out_indices[1][1], 8);
+    ASSERT_EQ(out_indices[1][2], 7);
+
+    /* Verify results - Array 2: top 3 should be {9, 8, 7} from indices {4, 2, 6} */
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[2][0], 9.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[2][1], 8.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[2][2], 7.0, 1e-10);
+    ASSERT_EQ(out_indices[2][0], 4);
+    ASSERT_EQ(out_indices[2][1], 2);
+    ASSERT_EQ(out_indices[2][2], 6);
+
+    /* Verify original data is not modified */
+    FC_TEST_ASSERT_DOUBLE_EQ(arrays_data[0][0], 9.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(arrays_data[1][0], 0.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(arrays_data[2][0], 5.0, 1e-10);
+
+    /* Cleanup */
+    for (size_t i = 0; i < num_batches; i++) {
+        free(out_values[i]);
+        free(out_indices[i]);
+    }
+}
+
+TEST(topk_smallest_f64_indexed_batch_basic) {
+    const size_t num_batches = 2;
+    const size_t array_size = 8;
+    const size_t k = 4;
+
+    /* Prepare input arrays */
+    const double* input_arrays[2];
+    double arrays_data[2][8] = {
+        {7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0},
+        {3.0, 1.0, 4.0, 1.0, 5.0, 9.0, 2.0, 6.0}
+    };
+
+    for (size_t i = 0; i < num_batches; i++) {
+        input_arrays[i] = arrays_data[i];
+    }
+
+    size_t sizes[2] = {array_size, array_size};
+    size_t ks[2] = {k, k};
+
+    /* Allocate output arrays */
+    double* out_values[2];
+    size_t* out_indices[2];
+    for (size_t i = 0; i < num_batches; i++) {
+        out_values[i] = (double*)malloc(k * sizeof(double));
+        out_indices[i] = (size_t*)malloc(k * sizeof(size_t));
+        ASSERT_NOT_NULL(out_values[i]);
+        ASSERT_NOT_NULL(out_indices[i]);
+    }
+
+    /* Call indexed batch function */
+    fc_status_t err = fc_topk_smallest_f64_indexed_batch(
+        input_arrays, sizes, ks, num_batches, out_values, out_indices
+    );
+    ASSERT_EQ(err, FC_OK);
+
+    /* Verify results - Array 0: top 4 smallest should be {0, 1, 2, 3} */
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[0][0], 0.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[0][1], 1.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[0][2], 2.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[0][3], 3.0, 1e-10);
+
+    /* Verify results - Array 1: top 4 smallest should be {1, 1, 2, 3} */
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[1][0], 1.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[1][1], 1.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[1][2], 2.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(out_values[1][3], 3.0, 1e-10);
+
+    /* Verify original data is not modified */
+    FC_TEST_ASSERT_DOUBLE_EQ(arrays_data[0][0], 7.0, 1e-10);
+    FC_TEST_ASSERT_DOUBLE_EQ(arrays_data[1][0], 3.0, 1e-10);
+
+    /* Cleanup */
+    for (size_t i = 0; i < num_batches; i++) {
+        free(out_values[i]);
+        free(out_indices[i]);
+    }
+}
+
+TEST(topk_largest_f64_indexed_batch_empty) {
+    fc_status_t err = fc_topk_largest_f64_indexed_batch(NULL, NULL, NULL, 0, NULL, NULL);
+    ASSERT_EQ(err, FC_OK);
+}
+
+TEST(topk_largest_f64_indexed_batch_null_pointer) {
+    fc_status_t err = fc_topk_largest_f64_indexed_batch(NULL, NULL, NULL, 10, NULL, NULL);
+    ASSERT_EQ(err, FC_ERR_INVALID_ARG);
+}
+
+TEST(topk_largest_f32_indexed_batch_basic) {
+    const size_t num_batches = 2;
+    const size_t array_size = 6;
+    const size_t k = 3;
+
+    /* Prepare input arrays */
+    const float* input_arrays[2];
+    float arrays_data[2][6] = {
+        {5.0f, 4.0f, 3.0f, 2.0f, 1.0f, 0.0f},
+        {1.0f, 5.0f, 2.0f, 4.0f, 3.0f, 0.0f}
+    };
+
+    for (size_t i = 0; i < num_batches; i++) {
+        input_arrays[i] = arrays_data[i];
+    }
+
+    size_t sizes[2] = {array_size, array_size};
+    size_t ks[2] = {k, k};
+
+    /* Allocate output arrays */
+    float* out_values[2];
+    size_t* out_indices[2];
+    for (size_t i = 0; i < num_batches; i++) {
+        out_values[i] = (float*)malloc(k * sizeof(float));
+        out_indices[i] = (size_t*)malloc(k * sizeof(size_t));
+        ASSERT_NOT_NULL(out_values[i]);
+        ASSERT_NOT_NULL(out_indices[i]);
+    }
+
+    /* Call indexed batch function */
+    fc_status_t err = fc_topk_largest_f32_indexed_batch(
+        input_arrays, sizes, ks, num_batches, out_values, out_indices
+    );
+    ASSERT_EQ(err, FC_OK);
+
+    /* Verify results - Array 0: top 3 should be {5, 4, 3} */
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[0][0], 5.0, 1e-6);
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[0][1], 4.0, 1e-6);
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[0][2], 3.0, 1e-6);
+
+    /* Verify results - Array 1: top 3 should be {5, 4, 3} */
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[1][0], 5.0, 1e-6);
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[1][1], 4.0, 1e-6);
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[1][2], 3.0, 1e-6);
+
+    /* Verify original data is not modified */
+    FC_TEST_ASSERT_DOUBLE_EQ((double)arrays_data[0][0], 5.0, 1e-6);
+    FC_TEST_ASSERT_DOUBLE_EQ((double)arrays_data[1][0], 1.0, 1e-6);
+
+    /* Cleanup */
+    for (size_t i = 0; i < num_batches; i++) {
+        free(out_values[i]);
+        free(out_indices[i]);
+    }
+}
+
+TEST(topk_smallest_f32_indexed_batch_basic) {
+    const size_t num_batches = 2;
+    const size_t array_size = 5;
+    const size_t k = 2;
+
+    /* Prepare input arrays */
+    const float* input_arrays[2];
+    float arrays_data[2][5] = {
+        {4.0f, 3.0f, 2.0f, 1.0f, 0.0f},
+        {9.0f, 2.0f, 7.0f, 1.0f, 5.0f}
+    };
+
+    for (size_t i = 0; i < num_batches; i++) {
+        input_arrays[i] = arrays_data[i];
+    }
+
+    size_t sizes[2] = {array_size, array_size};
+    size_t ks[2] = {k, k};
+
+    /* Allocate output arrays */
+    float* out_values[2];
+    size_t* out_indices[2];
+    for (size_t i = 0; i < num_batches; i++) {
+        out_values[i] = (float*)malloc(k * sizeof(float));
+        out_indices[i] = (size_t*)malloc(k * sizeof(size_t));
+        ASSERT_NOT_NULL(out_values[i]);
+        ASSERT_NOT_NULL(out_indices[i]);
+    }
+
+    /* Call indexed batch function */
+    fc_status_t err = fc_topk_smallest_f32_indexed_batch(
+        input_arrays, sizes, ks, num_batches, out_values, out_indices
+    );
+    ASSERT_EQ(err, FC_OK);
+
+    /* Verify results - Array 0: top 2 smallest should be {0, 1} */
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[0][0], 0.0, 1e-6);
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[0][1], 1.0, 1e-6);
+
+    /* Verify results - Array 1: top 2 smallest should be {1, 2} */
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[1][0], 1.0, 1e-6);
+    FC_TEST_ASSERT_DOUBLE_EQ((double)out_values[1][1], 2.0, 1e-6);
+
+    /* Verify original data is not modified */
+    FC_TEST_ASSERT_DOUBLE_EQ((double)arrays_data[0][0], 4.0, 1e-6);
+    FC_TEST_ASSERT_DOUBLE_EQ((double)arrays_data[1][0], 9.0, 1e-6);
+
+    /* Cleanup */
+    for (size_t i = 0; i < num_batches; i++) {
+        free(out_values[i]);
+        free(out_indices[i]);
+    }
+}
+
 
 void register_topk_tests(void) {
     RUN_TEST(topk_largest_f64_empty);
@@ -574,4 +826,12 @@ void register_topk_tests(void) {
     RUN_TEST(topk_largest_f32_batch_basic);
     RUN_TEST(topk_smallest_f32_batch_basic);
     RUN_TEST(topk_largest_f64_batch_large_scale);
+
+    /* Indexed batch processing tests */
+    RUN_TEST(topk_largest_f64_indexed_batch_basic);
+    RUN_TEST(topk_smallest_f64_indexed_batch_basic);
+    RUN_TEST(topk_largest_f64_indexed_batch_empty);
+    RUN_TEST(topk_largest_f64_indexed_batch_null_pointer);
+    RUN_TEST(topk_largest_f32_indexed_batch_basic);
+    RUN_TEST(topk_smallest_f32_indexed_batch_basic);
 }
